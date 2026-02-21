@@ -84,7 +84,7 @@ COPY --from=openclaw-build /usr/local/bin/mcporter /usr/local/bin/mcporter
 
 # Ensure openclaw binary is on PATH and config is found
 ENV PATH="/opt/openclaw/packages/clawdbot/node_modules/.bin:${PATH}"
-ENV OPENCLAW_CONFIG_PATH="/root/hiclaw-fs/agents/manager/openclaw.json"
+ENV OPENCLAW_CONFIG_PATH="/root/manager-workspace/openclaw.json"
 
 # ---- Copy HiClaw configuration and scripts ----
 # Our supervisord.conf replaces the Higress one; our scripts handle all components
@@ -105,6 +105,8 @@ RUN chmod +x /opt/hiclaw/scripts/init/*.sh /opt/hiclaw/scripts/lib/*.sh && \
 EXPOSE 8080 8001 9001
 
 # ---- Persistent data ----
+# /data: MinIO object storage, secrets, worker credentials
+# /root/manager-workspace: Manager's working directory (host-mounted via install script)
 VOLUME ["/data"]
 
 # ---- Start ----

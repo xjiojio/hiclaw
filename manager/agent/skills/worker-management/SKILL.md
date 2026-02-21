@@ -29,12 +29,12 @@ EOF
 
 1. List all available skills:
    ```bash
-   ls ~/hiclaw-fs/agents/manager/worker-skills/
+   ls ~/manager-workspace/worker-skills/
    ```
 
 2. Read the YAML frontmatter at the top of each skill's `SKILL.md` to get its `assign_when` condition:
    ```bash
-   head -8 ~/hiclaw-fs/agents/manager/worker-skills/<skill-name>/SKILL.md
+   head -8 ~/manager-workspace/worker-skills/<skill-name>/SKILL.md
    ```
    Each `SKILL.md` starts with:
    ```yaml
@@ -154,11 +154,11 @@ See `higress-gateway-management` SKILL.md for the exact API calls.
 
 ## Manage Worker Skills
 
-Manager centrally manages all Worker skills. The canonical skill definitions live in `~/hiclaw-fs/agents/manager/worker-skills/`. Worker skill assignments are tracked in `~/hiclaw-fs/agents/manager/workers-registry.json`.
+Manager centrally manages all Worker skills. The canonical skill definitions live in `~/manager-workspace/worker-skills/`. Worker skill assignments are tracked in `~/manager-workspace/workers-registry.json`.
 
 ### workers-registry.json
 
-Location: `~/hiclaw-fs/agents/manager/workers-registry.json`
+Location: `~/manager-workspace/workers-registry.json`
 
 Format:
 ```json
@@ -182,7 +182,7 @@ Format:
 ### worker-skills/ Directory Structure
 
 ```
-~/hiclaw-fs/agents/manager/worker-skills/
+~/manager-workspace/worker-skills/
 ├── README.md
 └── github-operations/
     └── SKILL.md
@@ -213,7 +213,7 @@ After pushing skills, the script notifies the affected Worker(s) via Matrix @men
 
 ### How to Add a New Custom Skill
 
-1. Create the skill directory under `~/hiclaw-fs/agents/manager/worker-skills/<skill-name>/` and write its files (`SKILL.md` must include `name`, `description`, and `assign_when` frontmatter; place any scripts under `scripts/`). `~/hiclaw-fs/` syncs to MinIO in real time — no extra steps needed for persistence.
+1. Create the skill directory under `~/manager-workspace/worker-skills/<skill-name>/` and write its files (`SKILL.md` must include `name`, `description`, and `assign_when` frontmatter; place any scripts under `scripts/`). The manager workspace is local only — use `push-worker-skills.sh` to distribute skills to workers.
 
 2. Assign to Worker：
    ```bash

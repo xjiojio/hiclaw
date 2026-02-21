@@ -79,7 +79,22 @@ waitForService "Higress Console" "127.0.0.1" 8001 180
 waitForService "Tuwunel" "127.0.0.1" 6167 120
 waitForService "MinIO" "127.0.0.1" 9000 120
 
-# Wait for mc mirror initialization
+# ============================================================
+# Initialize Manager workspace (local only, not synced to MinIO)
+# On first boot: copy agent files from image.
+# On subsequent boots: files already exist from the mounted volume.
+# ============================================================
+mkdir -p ~/manager-workspace
+if [ ! -f ~/manager-workspace/.initialized ]; then
+    log "Initializing manager workspace from image..."
+    cp -r /opt/hiclaw/agent/. ~/manager-workspace/
+    touch ~/manager-workspace/.initialized
+    log "Manager workspace initialized at ~/manager-workspace/"
+else
+    log "Manager workspace already initialized"
+fi
+
+# Wait for mc mirror initialization (shared + worker data in ~/hiclaw-fs/)
 log "Waiting for MinIO storage initialization..."
 while [ ! -f ~/hiclaw-fs/.initialized ]; do sleep 2; done
 log "MinIO storage initialized"
@@ -240,7 +255,7 @@ esac
 export MODEL_REASONING=true
 log "Model: ${MODEL_NAME} (context=${MODEL_CONTEXT_WINDOW}, maxTokens=${MODEL_MAX_TOKENS}, reasoning=${MODEL_REASONING})"
 
-envsubst < /opt/hiclaw/configs/manager-openclaw.json.tmpl > ~/hiclaw-fs/agents/manager/openclaw.json
+envsubst < /opt/hiclaw/configs/manager-openclaw.json.tmpl > ~/manager-workspace/openclaw.json
 
 # ============================================================
 # Detect container runtime socket (for direct Worker creation)
@@ -258,10 +273,10 @@ fi
 # Start OpenClaw Manager Agent
 # ============================================================
 log "Starting Manager Agent (OpenClaw)..."
-export OPENCLAW_CONFIG_PATH=~/hiclaw-fs/agents/manager/openclaw.json
+export OPENCLAW_CONFIG_PATH=~/manager-workspace/openclaw.json
 
 # Symlink to default OpenClaw config path so CLI commands find the config
 mkdir -p /root/.openclaw
-ln -sf ~/hiclaw-fs/agents/manager/openclaw.json /root/.openclaw/openclaw.json
+ln -sf ~/manager-workspace/openclaw.json /root/.openclaw/openclaw.json
 
 exec openclaw gateway run --verbose --force

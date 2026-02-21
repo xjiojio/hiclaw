@@ -331,7 +331,7 @@ fi
 # Step 7: Update Manager groupAllowFrom
 # ============================================================
 log "Step 7: Updating Manager groupAllowFrom..."
-MANAGER_CONFIG="${HOME}/hiclaw-fs/agents/manager/openclaw.json"
+MANAGER_CONFIG="${HOME}/manager-workspace/openclaw.json"
 WORKER_MATRIX_ID="@${WORKER_NAME}:${MATRIX_DOMAIN}"
 if [ -f "${MANAGER_CONFIG}" ]; then
     ALREADY_IN=$(jq -r --arg w "${WORKER_MATRIX_ID}" \
@@ -363,7 +363,7 @@ log "  MinIO sync verified"
 # Step 8.5: Update workers-registry.json and push skills
 # ============================================================
 log "Step 8.5: Updating workers-registry and pushing skills..."
-REGISTRY_FILE="${HOME}/hiclaw-fs/agents/manager/workers-registry.json"
+REGISTRY_FILE="${HOME}/manager-workspace/workers-registry.json"
 
 # Ensure registry file exists
 if [ ! -f "${REGISTRY_FILE}" ]; then
@@ -407,9 +407,6 @@ jq --arg w "${WORKER_NAME}" \
    "${REGISTRY_FILE}" > /tmp/workers-registry-updated.json
 mv /tmp/workers-registry-updated.json "${REGISTRY_FILE}"
 
-# Sync registry to MinIO
-mc cp "${REGISTRY_FILE}" "hiclaw/hiclaw-storage/agents/manager/workers-registry.json" > /dev/null 2>&1 \
-    || log "  WARNING: Failed to sync registry to MinIO"
 log "  Registry updated for ${WORKER_NAME}: skills=${SKILLS_WITH_FILESYNC}"
 
 # Push non-file-sync skills to worker's MinIO workspace (Worker not yet started, no notification)

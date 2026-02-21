@@ -133,18 +133,35 @@ Room: "Worker: Alice"
 
 ## File System Layout
 
+### Manager Workspace (local only, host-mountable)
+
+The Manager's own working directory lives locally and is never synced to MinIO.
+Mounted at `/root/manager-workspace` inside the container.
+
 ```
-MinIO bucket: hiclaw-storage/
+~/manager-workspace/         # Manager's working directory (host-mountable)
+├── SOUL.md                  # Manager identity (copied from image on first boot)
+├── AGENTS.md                # Workspace guide
+├── HEARTBEAT.md             # Heartbeat checklist
+├── openclaw.json            # Generated config (regenerated each boot)
+├── skills/                  # Manager's own skills
+├── worker-skills/           # Worker skill definitions (pushed to workers via mc cp)
+├── workers-registry.json    # Worker skill assignments and room IDs
+├── state.json               # Active task state
+└── memory/                  # Manager's memory files (MEMORY.md, YYYY-MM-DD.md)
+```
+
+### MinIO Object Storage (shared between Manager and Workers)
+
+Synced to `~/hiclaw-fs/` locally on the Manager side via `mc mirror`.
+
+```
+MinIO bucket: hiclaw-storage/   (mirrored to ~/hiclaw-fs/ on Manager)
 ├── agents/
-│   ├── manager/         # Manager config + skills
-│   │   ├── SOUL.md
-│   │   ├── AGENTS.md
-│   │   ├── HEARTBEAT.md
-│   │   ├── openclaw.json
-│   │   └── skills/
 │   ├── alice/           # Worker Alice config
 │   │   ├── SOUL.md
 │   │   ├── openclaw.json
+│   │   ├── skills/
 │   │   └── mcporter-servers.json
 │   └── bob/             # Worker Bob config
 ├── shared/
@@ -155,7 +172,5 @@ MinIO bucket: hiclaw-storage/
 │   │       ├── base/        # Manager-maintained reference files (codebase, docs, etc.)
 │   │       └── result.md    # Task result (written by Worker)
 │   └── knowledge/       # Shared reference materials
-├── manager/
-│   └── credentials/     # Manager credential records
 └── workers/             # Worker work products
 ```

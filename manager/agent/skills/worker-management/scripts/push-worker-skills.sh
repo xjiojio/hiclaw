@@ -55,8 +55,8 @@ if [ -n "${SKILL_NAME}" ] && ([ -n "${ADD_SKILL}" ] || [ -n "${REMOVE_SKILL}" ])
     exit 1
 fi
 
-REGISTRY_FILE="${HOME}/hiclaw-fs/agents/manager/workers-registry.json"
-WORKER_SKILLS_DIR="${HOME}/hiclaw-fs/agents/manager/worker-skills"
+REGISTRY_FILE="${HOME}/manager-workspace/workers-registry.json"
+WORKER_SKILLS_DIR="${HOME}/manager-workspace/worker-skills"
 MATRIX_DOMAIN="${HICLAW_MATRIX_DOMAIN:-matrix-local.hiclaw.io:8080}"
 
 # ============================================================
@@ -76,10 +76,7 @@ _save_registry() {
     # Update updated_at timestamp
     registry=$(echo "${registry}" | jq --arg ts "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" '.updated_at = $ts')
     echo "${registry}" | jq . > "${REGISTRY_FILE}"
-    # Sync registry to MinIO
-    mc cp "${REGISTRY_FILE}" "hiclaw/hiclaw-storage/agents/manager/workers-registry.json" > /dev/null 2>&1 \
-        || log "WARNING: Failed to sync registry to MinIO"
-    log "Registry saved and synced to MinIO"
+    log "Registry saved"
 }
 
 _get_worker_skills() {

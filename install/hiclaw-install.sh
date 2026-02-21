@@ -22,6 +22,7 @@
 #   HICLAW_MATRIX_DOMAIN      Matrix domain        (default: matrix-local.hiclaw.io:8080)
 #   HICLAW_MOUNT_SOCKET       Mount container runtime socket (default: 1)
 #   HICLAW_DATA_DIR           Host directory for persistent data (default: docker volume)
+#   HICLAW_WORKSPACE_DIR      Host directory for manager workspace (default: ~/hiclaw-manager)
 #   HICLAW_VERSION            Image tag            (default: latest)
 #   HICLAW_PORT_GATEWAY       Host port for Higress gateway (default: 8080)
 #   HICLAW_PORT_CONSOLE       Host port for Higress console (default: 8001)
@@ -203,6 +204,20 @@ install_manager() {
         log "  Using Docker volume: hiclaw-data"
     fi
 
+    # Manager workspace directory (skills, memory, state — host-editable)
+    log "--- Manager Workspace ---"
+    if [ "${HICLAW_NON_INTERACTIVE}" != "1" ] && [ -z "${HICLAW_WORKSPACE_DIR+x}" ]; then
+        read -p "Manager workspace directory [${HOME}/hiclaw-manager]: " HICLAW_WORKSPACE_DIR
+        HICLAW_WORKSPACE_DIR="${HICLAW_WORKSPACE_DIR:-${HOME}/hiclaw-manager}"
+        export HICLAW_WORKSPACE_DIR
+    elif [ -z "${HICLAW_WORKSPACE_DIR+x}" ]; then
+        HICLAW_WORKSPACE_DIR="${HOME}/hiclaw-manager"
+        export HICLAW_WORKSPACE_DIR
+    fi
+    HICLAW_WORKSPACE_DIR="$(cd "${HICLAW_WORKSPACE_DIR}" 2>/dev/null && pwd || echo "${HICLAW_WORKSPACE_DIR}")"
+    mkdir -p "${HICLAW_WORKSPACE_DIR}"
+    log "  Manager workspace: ${HICLAW_WORKSPACE_DIR}"
+
     log ""
 
     # Generate secrets (only if not already set)
@@ -257,6 +272,8 @@ HICLAW_PORT_CONSOLE=${HICLAW_PORT_CONSOLE}
 
 # Data persistence
 HICLAW_DATA_DIR=${HICLAW_DATA_DIR:-}
+# Manager workspace (skills, memory, state — host-editable)
+HICLAW_WORKSPACE_DIR=${HICLAW_WORKSPACE_DIR:-}
 # Host directory sharing
 HICLAW_HOST_SHARE_DIR=${HICLAW_HOST_SHARE_DIR:-}
 EOF
@@ -290,6 +307,9 @@ EOF
         DATA_MOUNT_ARGS="-v hiclaw-data:/data"
     fi
 
+    # Manager workspace mount (always a host directory, defaulting to ~/hiclaw-manager)
+    WORKSPACE_MOUNT_ARGS="-v ${HICLAW_WORKSPACE_DIR}:/root/manager-workspace"
+
     # Host directory mount: for file sharing with agents (defaults to user's home)
     if [ "${HICLAW_NON_INTERACTIVE}" != "1" ] && [ -z "${HICLAW_HOST_SHARE_DIR+x}" ]; then
         read -p "Host directory to share with agents (default: $HOME): " HICLAW_HOST_SHARE_DIR
@@ -318,6 +338,7 @@ EOF
         -p "${HICLAW_PORT_GATEWAY}:8080" \
         -p "${HICLAW_PORT_CONSOLE}:8001" \
         ${DATA_MOUNT_ARGS} \
+        ${WORKSPACE_MOUNT_ARGS} \
         ${HOST_SHARE_MOUNT_ARGS} \
         --restart unless-stopped \
         "${MANAGER_IMAGE}"
@@ -351,6 +372,7 @@ EOF
     else
         log "Data volume:        hiclaw-data (use HICLAW_DATA_DIR to persist externally)"
     fi
+    log "Manager workspace:  ${HICLAW_WORKSPACE_DIR}"
 }
 
 # ============================================================

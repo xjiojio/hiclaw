@@ -1,10 +1,8 @@
 # Manager Agent Workspace
 
-This workspace is your home. All agents share the same `~/hiclaw-fs/` directory layout for consistent path references across conversations:
-
-- **Your agent files:** `~/hiclaw-fs/agents/manager/` (SOUL.md, openclaw.json, memory/, skills/)
-- **Shared space:** `~/hiclaw-fs/shared/` (tasks, knowledge, collaboration data)
-- **Worker files:** `~/hiclaw-fs/agents/<worker-name>/` (visible to you via MinIO)
+- **Your workspace:** `~/manager-workspace/` (SOUL.md, openclaw.json, memory/, skills/, state.json, workers-registry.json — local only, host-mountable, never synced to MinIO)
+- **Shared space:** `~/hiclaw-fs/shared/` (tasks, knowledge, collaboration data — synced with MinIO)
+- **Worker files:** `~/hiclaw-fs/agents/<worker-name>/` (visible to you via MinIO mirror)
 
 ## Host File Access Permissions
 
@@ -51,7 +49,7 @@ You wake up fresh each session. Files are your continuity:
 
 - "Mental notes" don't survive sessions. Files do.
 - When you learn something → update `memory/YYYY-MM-DD.md` or relevant file
-- When you discover a pattern → update MEMORY.md
+- When you discover a pattern → update `MEMORY.md`
 - When a process changes → update the relevant SKILL.md
 - When you make a mistake → document it so future-you doesn't repeat it
 - **Text > Brain**
@@ -70,7 +68,7 @@ Skills provide your tools. When you need one, check its `SKILL.md`. Keep local n
 
 ## Worker Skills Management
 
-Worker skill definitions live in `~/hiclaw-fs/agents/manager/worker-skills/`. When the human admin asks you to convert an MCP capability into a Worker skill, or to add any new Worker skill, the `SKILL.md` **must** start with a YAML frontmatter block:
+Worker skill definitions live in `worker-skills/`. When the human admin asks you to convert an MCP capability into a Worker skill, or to add any new Worker skill, the `SKILL.md` **must** start with a YAML frontmatter block:
 
 ```yaml
 ---
@@ -83,6 +81,8 @@ assign_when: <natural language description: what role/responsibility Worker shou
 **`assign_when` is required** — when creating a Worker, you read this field from every available skill and match it against the Worker's role to decide what to assign. A skill without `assign_when` will never be automatically assigned to any Worker.
 
 For the full procedure, see the "How to Add a New Custom Skill" section in the `worker-management` SKILL.md.
+
+> **Note**: Your workspace is local only and never synced to MinIO. If you need workers to access a file, use `mc cp` to push it explicitly (e.g. `mc cp ~/manager-workspace/somefile hiclaw/hiclaw-storage/shared/somefile`).
 
 ## Key Environment
 
@@ -183,7 +183,7 @@ Trigger message format:
 
 ## State File (state.json)
 
-Path: `~/hiclaw-fs/agents/manager/state.json`
+Path: `state.json`
 
 This file is the single source of truth for active tasks. The heartbeat reads it instead of scanning all meta.json files.
 
@@ -221,7 +221,7 @@ This file is the single source of truth for active tasks. The heartbeat reads it
 | Create an infinite task | Add entry to `active_tasks` (type=infinite, with schedule/timezone/next_scheduled_at) |
 | Finite task completed | Remove the task_id from `active_tasks` |
 | Infinite task executed | Update `last_executed_at`, recalculate `next_scheduled_at` |
-| After every write | Update `updated_at`, then `mc cp` to sync to MinIO: `mc cp ~/hiclaw-fs/agents/manager/state.json hiclaw/hiclaw-storage/agents/manager/state.json` |
+| After every write | Update `updated_at` (state.json is local only — no MinIO sync needed) |
 
 If `state.json` does not exist yet, create it with `{"active_tasks": [], "updated_at": "<ISO-8601>"}`.
 
