@@ -53,6 +53,9 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-Expression ((New-Object
 
 **Prerequisites**: Docker Desktop (Windows/macOS) or Docker Engine (Linux). That's all.
 
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows / macOS)
+- [Docker Engine](https://docs.docker.com/engine/install/) (Linux) or [Podman Desktop](https://podman-desktop.io/) (alternative)
+
 **Resource requirements**: The Docker VM needs at least 2 CPU cores and 4 GB RAM. In Docker Desktop, go to Settings → Resources to adjust.
 
 ### Non-interactive install

@@ -418,7 +418,8 @@ $script:Messages = @{
     "error.fs_key_required" = @{ zh = "--fs-key 是必需的"; en = "--fs-key is required" }
     "error.fs_secret_required" = @{ zh = "--fs-secret 是必需的"; en = "--fs-secret is required" }
     "error.unknown_option" = @{ zh = "未知选项: {0}"; en = "Unknown option: {0}" }
-    "error.docker_not_running" = @{ zh = "Docker Desktop 未运行。请先启动 Docker Desktop。"; en = "Docker Desktop is not running. Please start Docker Desktop first." }
+    "error.docker_not_running" = @{ zh = "Docker 未运行。请先启动 Docker Desktop 或 Podman Desktop。"; en = "Docker is not running. Please start Docker Desktop or Podman Desktop first." }
+    "error.docker_not_found" = @{ zh = "未找到 docker 或 podman 命令。请先安装 Docker Desktop 或 Podman Desktop：`n  Docker Desktop: https://www.docker.com/products/docker-desktop/`n  Podman Desktop: https://podman-desktop.io/"; en = "docker or podman command not found. Please install Docker Desktop or Podman Desktop first:`n  Docker Desktop: https://www.docker.com/products/docker-desktop/`n  Podman Desktop: https://podman-desktop.io/" }
 
     # --- Uninstall messages ---
     "uninstall.title" = @{ zh = "正在卸载 HiClaw..."; en = "Uninstalling HiClaw..." }
@@ -1000,9 +1001,20 @@ function Install-Manager {
     Write-Log (Get-Msg "install.dir_hint2")
     Write-Log ""
 
-    # Check Docker
+    # Check container runtime (docker or podman)
+    $dockerCmd = $null
+    if (Get-Command "docker" -ErrorAction SilentlyContinue) {
+        $dockerCmd = "docker"
+    } elseif (Get-Command "podman" -ErrorAction SilentlyContinue) {
+        $dockerCmd = "podman"
+    } else {
+        Write-Host "`e[31m[HiClaw ERROR]`e[0m $(Get-Msg 'error.docker_not_found')" -ForegroundColor Red
+        exit 1
+    }
+
     if (-not (Test-DockerRunning)) {
-        Write-Error (Get-Msg "error.docker_not_running")
+        Write-Host "`e[31m[HiClaw ERROR]`e[0m $(Get-Msg 'error.docker_not_running')" -ForegroundColor Red
+        exit 1
     }
 
     # Initialize config hashtable

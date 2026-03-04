@@ -563,6 +563,10 @@ msg() {
         "error.fs_secret_required.en") text="--fs-secret is required" ;;
         "error.unknown_option.zh") text="未知选项: %s" ;;
         "error.unknown_option.en") text="Unknown option: %s" ;;
+        "error.docker_not_found.zh") text="未找到 docker 或 podman 命令。请先安装 Docker Desktop 或 Podman Desktop：\n  Docker Desktop: https://www.docker.com/products/docker-desktop/\n  Podman Desktop: https://podman-desktop.io/" ;;
+        "error.docker_not_found.en") text="docker or podman command not found. Please install Docker Desktop or Podman Desktop first:\n  Docker Desktop: https://www.docker.com/products/docker-desktop/\n  Podman Desktop: https://podman-desktop.io/" ;;
+        "error.docker_not_running.zh") text="Docker 未运行。请先启动 Docker Desktop 或 Podman Desktop。" ;;
+        "error.docker_not_running.en") text="Docker is not running. Please start Docker Desktop or Podman Desktop first." ;;
         # --- Fallback: try English for unknown lang ---
         *)
             case "${key}.en" in
@@ -1743,6 +1747,30 @@ install_worker() {
 # ============================================================
 # Main
 # ============================================================
+
+# ============================================================
+# Check container runtime (docker or podman)
+# ============================================================
+
+check_container_runtime() {
+    local cmd=""
+    if command -v docker >/dev/null 2>&1; then
+        cmd="docker"
+    elif command -v podman >/dev/null 2>&1; then
+        cmd="podman"
+    else
+        echo -e "\033[31m[HiClaw ERROR]\033[0m $(msg error.docker_not_found)" >&2
+        exit 1
+    fi
+
+    # Command exists — check if daemon is running
+    if ! ${cmd} info >/dev/null 2>&1; then
+        echo -e "\033[31m[HiClaw ERROR]\033[0m $(msg error.docker_not_running)" >&2
+        exit 1
+    fi
+}
+
+check_container_runtime
 
 case "${1:-}" in
     manager|"")
