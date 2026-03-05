@@ -45,3 +45,11 @@ http://<LAN-IP>:18080
 ```
 
 For example, if your LAN IP is `192.168.1.100`, enter `http://192.168.1.100:18080`.
+
+---
+
+## Cannot connect to Matrix server locally
+
+If the Matrix server is unreachable even on the local machine, check whether a proxy is enabled in your browser or system. The `*-local.hiclaw.io` domain resolves to `127.0.0.1` by default — if traffic is routed through a proxy, requests will never reach the local server.
+
+Disable the proxy, or add `*-local.hiclaw.io` / `127.0.0.1` to your proxy bypass list.
