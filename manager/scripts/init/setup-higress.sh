@@ -17,6 +17,7 @@ MATRIX_DOMAIN="${HICLAW_MATRIX_DOMAIN:-matrix-local.hiclaw.io:8080}"
 MATRIX_CLIENT_DOMAIN="${HICLAW_MATRIX_CLIENT_DOMAIN:-matrix-client-local.hiclaw.io}"
 AI_GATEWAY_DOMAIN="${HICLAW_AI_GATEWAY_DOMAIN:-aigw-local.hiclaw.io}"
 FS_DOMAIN="${HICLAW_FS_DOMAIN:-fs-local.hiclaw.io}"
+WATCH_DOMAIN="${HICLAW_WATCH_DOMAIN:-watch-local.hiclaw.io}"
 
 LLM_PROVIDER="${HICLAW_LLM_PROVIDER:-qwen}"
 LLM_API_URL="${HICLAW_LLM_API_URL:-}"
@@ -260,6 +261,31 @@ MCPEOF
     fi
 else
     log "Skipping GitHub MCP Server configuration (no HICLAW_GITHUB_TOKEN)"
+fi
+
+# ============================================================
+# 7. Manager Watch (Idempotent)
+# ============================================================
+WATCH_PORT="${HICLAW_WATCH_PORT:-19090}"
+
+# Service Source: Register manager-watch backend
+WATCH_SVC_BODY='{"name":"manager-watch","type":"static","domain":"127.0.0.1","port":'"${WATCH_PORT}"',"properties":{},"authN":{"enabled":false}}'
+existing_watch_svc=$(higress_get /v1/service-sources/manager-watch)
+
+if [ -n "${existing_watch_svc}" ]; then
+    higress_api PUT /v1/service-sources/manager-watch "Updating Manager Watch service source" "${WATCH_SVC_BODY}"
+else
+    higress_api POST /v1/service-sources "Registering Manager Watch service source" "${WATCH_SVC_BODY}"
+fi
+
+# Route: Expose manager-watch via domain
+WATCH_ROUTE_BODY='{"name":"manager-watch","domains":["'"${WATCH_DOMAIN}"'"],"path":{"matchType":"PRE","matchValue":"/"},"services":[{"name":"manager-watch.static","port":'"${WATCH_PORT}"',"weight":100}]}'
+existing_watch_route=$(higress_get /v1/routes/manager-watch)
+
+if [ -n "${existing_watch_route}" ]; then
+    higress_api PUT /v1/routes/manager-watch "Updating Manager Watch route" "${WATCH_ROUTE_BODY}"
+else
+    higress_api POST /v1/routes "Creating Manager Watch route" "${WATCH_ROUTE_BODY}"
 fi
 
 # ============================================================
