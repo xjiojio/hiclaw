@@ -2,9 +2,22 @@
 
 Path: `~/state.json`
 
-Single source of truth for active tasks. Heartbeat reads this instead of scanning all meta.json files.
+Runtime index for active tasks. `meta.json` is the business source of truth for task status, while `state.json` is an operational cache used by heartbeat and scheduling.
 
 **Always use `manage-state.sh` to modify** — never edit manually. The script handles initialization, deduplication, and atomic writes.
+
+For status transitions in `meta.json`, use:
+
+```bash
+META_SCRIPT=/opt/hiclaw/agent/skills/task-management/scripts/manage-task-meta.sh
+```
+
+| When | Command |
+|------|---------|
+| Create meta | `bash $META_SCRIPT --action create --task-id T --title TITLE --type finite|infinite --created-by USER` |
+| Assign worker | `bash $META_SCRIPT --action set-assignee --task-id T --assigned-to W` |
+| Update status | `bash $META_SCRIPT --action set-status --task-id T --status created|assigned|in_progress|completed|blocked|cancelled` |
+| Read meta | `bash $META_SCRIPT --action get --task-id T` |
 
 ## Script reference
 

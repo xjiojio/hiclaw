@@ -1,5 +1,15 @@
 ## Manager Heartbeat Checklist
 
+### 0. Reconcile task state (meta.json ↔ state.json)
+
+Run a quick reconciliation pass to fix common divergences before checks:
+
+```bash
+bash /opt/hiclaw/agent/skills/task-management/scripts/reconcile-task-state.sh
+```
+
+This removes completed finite tasks from `state.json` when `meta.json` is already `completed`, and marks `meta.json` as `completed` if a valid `result.md` exists but status wasn’t updated yet.
+
 ### 1. Read state.json
 
 Read state.json (local only, no sync needed). If the file does not exist, initialize it first:
@@ -53,8 +63,10 @@ Iterate over entries in `active_tasks` with `"type": "finite"`:
   ```
 - Determine if the Worker is making normal progress based on their reply
 - If the Worker has not responded (no response for more than one heartbeat cycle), flag the anomaly in the Room and notify the human admin (see Step 7)
-- If the Worker has replied that the task is complete but meta.json has not been updated, proactively update meta.json (status → completed, fill in completed_at), and remove the entry from `active_tasks`:
+- If the Worker has replied that the task is complete but meta.json has not been updated, proactively update `meta.json` and then remove the entry from `active_tasks`:
   ```bash
+  bash /opt/hiclaw/agent/skills/task-management/scripts/manage-task-meta.sh \
+    --action set-status --task-id {task-id} --status completed
   bash /opt/hiclaw/agent/skills/task-management/scripts/manage-state.sh --action complete --task-id {task-id}
   ```
 

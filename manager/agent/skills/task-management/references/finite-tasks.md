@@ -14,11 +14,17 @@
    ```bash
    mkdir -p /root/hiclaw-fs/shared/tasks/{task-id}
    ```
-   Write `meta.json` (type: "finite", status: "assigned") and `spec.md` (requirements, acceptance criteria, context).
+   Create `meta.json` via deterministic script, then write `spec.md` (requirements, acceptance criteria, context):
+   ```bash
+   bash /opt/hiclaw/agent/skills/task-management/scripts/manage-task-meta.sh \
+     --action create --task-id {task-id} --title "{title}" --type finite --created-by {admin}
+
+   bash /opt/hiclaw/agent/skills/task-management/scripts/manage-task-meta.sh \
+     --action set-assignee --task-id {task-id} --assigned-to {worker}
+   ```
 
 3. Push to MinIO **immediately** — Worker cannot file-sync until files are in MinIO:
    ```bash
-   mc cp /root/hiclaw-fs/shared/tasks/{task-id}/meta.json ${HICLAW_STORAGE_PREFIX}/shared/tasks/{task-id}/meta.json
    mc cp /root/hiclaw-fs/shared/tasks/{task-id}/spec.md ${HICLAW_STORAGE_PREFIX}/shared/tasks/{task-id}/spec.md
    ```
    **Verify the push succeeded** (non-zero exit = retry). Do NOT proceed to step 4 until files are confirmed in MinIO.
@@ -41,9 +47,13 @@
 
 1. Pull task directory from MinIO (Worker has pushed results):
    ```bash
-   mc mirror ${HICLAW_STORAGE_PREFIX}/shared/tasks/{task-id}/ /root/hiclaw-fs/shared/tasks/{task-id}/ --overwrite
+   bash /opt/hiclaw/scripts/task-sync.sh pull-full --task-id {task-id}
    ```
-2. Update `meta.json`: status=completed, fill completed_at. Push back to MinIO.
+2. Update `meta.json` via deterministic script:
+   ```bash
+   bash /opt/hiclaw/agent/skills/task-management/scripts/manage-task-meta.sh \
+     --action set-status --task-id {task-id} --status completed --result-summary "{summary}"
+   ```
 3. Remove from state.json:
    ```bash
    bash /opt/hiclaw/agent/skills/task-management/scripts/manage-state.sh \
