@@ -105,7 +105,7 @@ LINES          ?= 50
         tag push push-openclaw-base push-hiclaw-controller push-manager push-manager-aliyun push-manager-copaw push-worker push-copaw-worker push-docker-proxy \
         push-native push-native-manager push-native-manager-copaw push-native-worker push-native-copaw-worker \
         buildx-setup \
-        test test-quick test-installed \
+        test test-quick test-installed test-protocol perf-task-protocol \
         install uninstall replay replay-log \
         verify \
         status logs \
@@ -508,6 +508,12 @@ test-quick: ## Run test-01 only (quick smoke test)
 
 test-installed: ## Run tests against an already-installed Manager (no container lifecycle)
 	./tests/run-all-tests.sh --skip-build --use-existing $(if $(TEST_FILTER),--test-filter "$(TEST_FILTER)")
+
+test-protocol: ## Run protocol tests (22-26) against an already-installed Manager
+	./tests/run-all-tests.sh --skip-build --use-existing --test-filter "22 23 24 25 26"
+
+perf-task-protocol: ## Run task protocol benchmark against running Manager (ITER defaults to 200)
+	bash ./tests/perf/run-task-protocol-benchmark.sh hiclaw-manager $(or $(ITER),200)
 
 # ---------- Install / Uninstall ----------
 

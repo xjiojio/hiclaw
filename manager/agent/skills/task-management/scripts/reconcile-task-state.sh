@@ -2,6 +2,7 @@
 set -euo pipefail
 STATE_FILE="${HOME}/state.json"
 TASK_ROOT="/root/hiclaw-fs/shared/tasks"
+PROTOCOL_MODE="${HICLAW_TASK_PROTOCOL_MODE:-compatible}"
 if [ ! -f "${STATE_FILE}" ]; then
   echo '{"code":"OK","message":"no state file"}'
   exit 0
@@ -37,10 +38,11 @@ for task_id in $(jq -r '.active_tasks[] | select(.type=="finite") | .task_id' "$
         fi
         ;;
       created|assigned|blocked)
-        if bash /opt/hiclaw/agent/skills/task-management/scripts/manage-task-meta.sh \
-          --action set-status --task-id "${task_id}" --status in_progress >/dev/null 2>&1 && \
+        if [ "${PROTOCOL_MODE}" = "compatible" ] && \
            bash /opt/hiclaw/agent/skills/task-management/scripts/manage-task-meta.sh \
-          --action set-status --task-id "${task_id}" --status completed >/dev/null 2>&1; then
+            --action set-status --task-id "${task_id}" --status in_progress >/dev/null 2>&1 && \
+           bash /opt/hiclaw/agent/skills/task-management/scripts/manage-task-meta.sh \
+            --action set-status --task-id "${task_id}" --status completed >/dev/null 2>&1; then
           ok=1
         fi
         ;;
@@ -51,4 +53,4 @@ for task_id in $(jq -r '.active_tasks[] | select(.type=="finite") | .task_id' "$
     fi
   fi
 done
-printf '{"code":"OK","message":"reconciled","completed":%d}\n' "${completed}"
+printf '{"code":"OK","message":"reconciled","mode":"%s","completed":%d}\n' "${PROTOCOL_MODE}" "${completed}"
