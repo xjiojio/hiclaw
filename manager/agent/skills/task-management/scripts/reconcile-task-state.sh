@@ -28,9 +28,27 @@ for task_id in $(jq -r '.active_tasks[] | select(.type=="finite") | .task_id' "$
     continue
   fi
   if [ -s "${task_dir}/result.md" ]; then
-    bash /opt/hiclaw/agent/skills/task-management/scripts/manage-task-meta.sh --action set-status --task-id "${task_id}" --status completed >/dev/null 2>&1 || true
-    bash /opt/hiclaw/agent/skills/task-management/scripts/manage-state.sh --action complete --task-id "${task_id}" >/dev/null 2>&1 || true
-    completed=$((completed + 1))
+    ok=0
+    case "${status}" in
+      in_progress)
+        if bash /opt/hiclaw/agent/skills/task-management/scripts/manage-task-meta.sh \
+          --action set-status --task-id "${task_id}" --status completed >/dev/null 2>&1; then
+          ok=1
+        fi
+        ;;
+      created|assigned|blocked)
+        if bash /opt/hiclaw/agent/skills/task-management/scripts/manage-task-meta.sh \
+          --action set-status --task-id "${task_id}" --status in_progress >/dev/null 2>&1 && \
+           bash /opt/hiclaw/agent/skills/task-management/scripts/manage-task-meta.sh \
+          --action set-status --task-id "${task_id}" --status completed >/dev/null 2>&1; then
+          ok=1
+        fi
+        ;;
+    esac
+    if [ "${ok}" -eq 1 ]; then
+      bash /opt/hiclaw/agent/skills/task-management/scripts/manage-state.sh --action complete --task-id "${task_id}" >/dev/null 2>&1 || true
+      completed=$((completed + 1))
+    fi
   fi
 done
 printf '{"code":"OK","message":"reconciled","completed":%d}\n' "${completed}"
