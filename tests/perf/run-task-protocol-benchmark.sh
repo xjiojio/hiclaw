@@ -3,7 +3,7 @@ set -euo pipefail
 MANAGER_CONTAINER="${1:-hiclaw-manager}"
 ITERATIONS="${2:-200}"
 PULL_POLICY="${3:-if-missing}"
-TASK_ID_PREFIX="perf-task-$(date +%s)"
+TASK_ID_PREFIX="perf-task-$(date +%s)-${RANDOM}"
 docker exec -e HICLAW_META_PULL_POLICY="${PULL_POLICY}" "${MANAGER_CONTAINER}" bash -s -- "${ITERATIONS}" "${TASK_ID_PREFIX}" "${MANAGER_CONTAINER}" "${PULL_POLICY}" <<'EOF'
 set -euo pipefail
 ITERATIONS="$1"
@@ -61,3 +61,8 @@ echo "  \"p99_op_ms\": ${p99_op_ms},"
 echo "  \"pull_policy\": \"${PULL_POLICY}\""
 echo "}"
 EOF
+rc=$?
+if [ "${rc}" -ne 0 ]; then
+  echo "benchmark failed inside container: container=${MANAGER_CONTAINER} pull_policy=${PULL_POLICY}" >&2
+  exit "${rc}"
+fi
