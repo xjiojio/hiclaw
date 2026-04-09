@@ -9,6 +9,7 @@ ASSIGNED_TO=""
 CREATED_BY=""
 RESULT_SUMMARY=""
 TASK_ROOT="/root/hiclaw-fs/shared/tasks"
+PULL_POLICY="${HICLAW_META_PULL_POLICY:-if-missing}"
 json() {
   local code="$1"
   local message="$2"
@@ -46,6 +47,9 @@ fi
 ensure_mc_credentials 2>/dev/null || true
 pull_meta() {
   mkdir -p "${TASK_DIR}"
+  if [ "${PULL_POLICY}" = "if-missing" ] && [ -f "${META_FILE}" ]; then
+    return 0
+  fi
   mc cp "${HICLAW_STORAGE_PREFIX}/shared/tasks/${TASK_ID}/meta.json" "${META_FILE}" >/dev/null 2>&1 || true
 }
 push_meta() {
